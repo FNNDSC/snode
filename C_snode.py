@@ -96,6 +96,7 @@ class C_snode:
         mdict_contents          = {}
         mb_printMetaData        = True
         mb_printContents        = True
+        mb_printPre             = False
         
         #
         # Methods
@@ -128,26 +129,38 @@ class C_snode:
             self.m_verbosity    = a_verbosity
             self.m_warnings     = a_warnings
         
-        def __str__(self):
+        def __str__(self, ab_printPre=False):
             self.m_str.reset()
             str_pre = ""
-            for i in range(0, self.m_depth):
-              str_pre = "%s |   " % str_pre 
-            self.m_str.write('%s  +---%s\n' % (str_pre, self.mstr_nodeName))
+            if not self.depth():
+                str_pre = "o"
+            else:
+                str_pre = "+"
+            # for i in range(0, self.depth()-2):
+            #   str_pre = "%s| " % str_pre 
+            self.m_str.write('%s---%s\n' % (str_pre, self.mstr_nodeName))
             if self.mb_printMetaData:
-              self.m_str.write('%s    +--depth............ %d\n' % (str_pre, self.m_depth))
-              self.m_str.write('%s    +--hitCount......... %d\n' % (str_pre, self.m_hitCount))
-              self.m_str.write('%s    +--mustInclude...... %s\n' % (str_pre, self.ml_mustInclude))
-              self.m_str.write('%s    +--mustNotInclude... %s\n' % (str_pre, self.ml_mustNotInclude))
+              if ab_printPre: 
+                str_pre = "|"
+              else:
+                str_pre = " "
+              self.m_str.write('%s   +--depth............ %d\n' % (str_pre, self.m_depth))
+              self.m_str.write('%s   +--hitCount......... %d\n' % (str_pre, self.m_hitCount))
+              self.m_str.write('%s   +--mustInclude...... %s\n' % (str_pre, self.ml_mustInclude))
+              self.m_str.write('%s   +--mustNotInclude... %s\n' % (str_pre, self.ml_mustNotInclude))
             contents    = len(self.mdict_contents)
             if contents and self.mb_printContents:
-              self.m_str.write('%s    +--contents:\n' % str_pre)
-              elCount     = 0
+              self.m_str.write('%s   +--contents:\n' % str_pre )
+              elCount   = 0
+              lastKey   = self.mdict_contents.keys()[-1]
               for element in self.mdict_contents.keys():
                 str_contents = str_blockIndent('%s' % 
-                        self.mdict_contents[element])
-                if elCount <= contents - 1:
-                  str_contents = re.sub(r'        ', ' |      ', str_contents)
+                        self.mdict_contents[element], 1, 8)
+                # if elCount <= contents - 1:
+                #   str_contents = re.sub(r'        ', '       |', str_contents)
+                b_printPre = True
+                if element == lastKey:
+                    b_printPre = False
                 self.m_str.write(str_contents)
                 # print(self.mdict_contents[element])
                 elCount   = elCount + 1
@@ -422,10 +435,10 @@ class C_stree:
           snodeBranch   = C_snodeBranch(l_branchNodes)
           for node in l_branchNodes:
             depth = self.msnode_current.depth()
+            # if (self.msnode_current != self.msnode_root):
+            snodeBranch.mdict_branch[node].depth(depth+1)
             snodeBranch.mdict_branch[node].msnode_parent = self.msnode_current
           self.msnode_current.node_dictBranch(snodeBranch.mdict_branch)
-          if (self.msnode_current != self.msnode_root):
-            self.msnode_current.depth(depth+1)
           # Update the ml_allPaths
           self.paths_update(al_branchNodes)
           return b_ret

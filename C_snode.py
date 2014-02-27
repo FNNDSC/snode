@@ -130,17 +130,18 @@ class C_snode:
         
         def __str__(self):
             self.m_str.reset()
-            self.m_str.write(' +---%s\n'                  % self.mstr_nodeName)
+            str_pre = ""
+            for i in range(0, self.m_depth):
+              str_pre = "%s |   " % str_pre 
+            self.m_str.write('%s  +---%s\n' % (str_pre, self.mstr_nodeName))
             if self.mb_printMetaData:
-              for i in range(0, self.m_depth):
-                self.m_str.write(' |   ')
-              self.m_str.write(' |    +--depth............ %d\n' % self.m_depth)
-              self.m_str.write(' |    +--hitCount......... %d\n' % self.m_hitCount)
-              self.m_str.write(' |    +--mustInclude...... %s\n' % self.ml_mustInclude)
-              self.m_str.write(' |    +--mustNotInclude... %s\n' % self.ml_mustNotInclude)
+              self.m_str.write('%s    +--depth............ %d\n' % (str_pre, self.m_depth))
+              self.m_str.write('%s    +--hitCount......... %d\n' % (str_pre, self.m_hitCount))
+              self.m_str.write('%s    +--mustInclude...... %s\n' % (str_pre, self.ml_mustInclude))
+              self.m_str.write('%s    +--mustNotInclude... %s\n' % (str_pre, self.ml_mustNotInclude))
             contents    = len(self.mdict_contents)
             if contents and self.mb_printContents:
-              self.m_str.write(' |    +--contents:\n')
+              self.m_str.write('%s    +--contents:\n' % str_pre)
               elCount     = 0
               for element in self.mdict_contents.keys():
                 str_contents = str_blockIndent('%s' % 
@@ -148,6 +149,7 @@ class C_snode:
                 if elCount <= contents - 1:
                   str_contents = re.sub(r'        ', ' |      ', str_contents)
                 self.m_str.write(str_contents)
+                # print(self.mdict_contents[element])
                 elCount   = elCount + 1
               
             return self.m_str.strget()
@@ -419,9 +421,11 @@ class C_stree:
               l_branchNodes.append(node)
           snodeBranch   = C_snodeBranch(l_branchNodes)
           for node in l_branchNodes:
+            depth = self.msnode_current.depth()
             snodeBranch.mdict_branch[node].msnode_parent = self.msnode_current
-            node.depth = self.msnode_current.msnode_parent.depth() + 1
           self.msnode_current.node_dictBranch(snodeBranch.mdict_branch)
+          if (self.msnode_current != self.msnode_root):
+            self.msnode_current.depth(depth+1)
           # Update the ml_allPaths
           self.paths_update(al_branchNodes)
           return b_ret

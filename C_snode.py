@@ -87,10 +87,11 @@ class C_snode:
         
         mstr_nodeName           = ""
         m_hitCount              = 0;
-        ml_mustInclude          = [],
-        ml_canInclude           = [],
-        ml_mustNotInclude       = [],
+        ml_mustInclude          = []
+        ml_canInclude           = []
+        ml_mustNotInclude       = []
         ml_path                 = []
+        m_depth                 = 0
         msnode_parent           = None
         mdict_contents          = {}
         mb_printMetaData        = True
@@ -99,6 +100,19 @@ class C_snode:
         #
         # Methods
         #
+
+        #
+        # Getters and setters
+        def depth(self, *args):
+            '''
+            Get/set the depth of this node.
+            '''
+            if len(args):
+                self.m_depth = args[0]
+            else:
+                return self.m_depth
+
+
         # Core methods - construct, initialise, id
         def core_construct(     self,
                                 astr_obj        = 'C_scontainer',
@@ -118,6 +132,9 @@ class C_snode:
             self.m_str.reset()
             self.m_str.write(' +---%s\n'                  % self.mstr_nodeName)
             if self.mb_printMetaData:
+              for i in range(0, self.m_depth):
+                self.m_str.write(' |   ')
+              self.m_str.write(' |    +--depth............ %d\n' % self.m_depth)
               self.m_str.write(' |    +--hitCount......... %d\n' % self.m_hitCount)
               self.m_str.write(' |    +--mustInclude...... %s\n' % self.ml_mustInclude)
               self.m_str.write(' |    +--mustNotInclude... %s\n' % self.ml_mustNotInclude)
@@ -149,10 +166,10 @@ class C_snode:
         #
         # Simple error handling
         def error_exit(self, astr_action, astr_error, astr_code):
-            print "%s: FATAL error occurred" % self.mstr_obj
-            print "While %s," % astr_action
-            print "%s" % astr_error
-            print "\nReturning to system with code %s\n" % astr_code
+            print("%s: FATAL error occurred" % self.mstr_obj)
+            print("While %s," % astr_action)
+            print("%s" % astr_error)
+            print("\nReturning to system with code %s\n" % astr_code)
             sys.exit(astr_code)
                                       
         def node_branch(self, al_keys, al_values):
@@ -232,10 +249,10 @@ class C_snodeBranch:
         #
         # Simple error handling
         def error_exit(self, astr_action, astr_error, astr_code):
-            print "%s: FATAL error occurred" % self.mstr_obj
-            print "While %s," % astr_action
-            print "%s" % astr_error
-            print "\nReturning to system with code %s\n" % astr_code
+            print("%s: FATAL error occurred" % self.mstr_obj)
+            print("While %s," % astr_action)
+            print("%s" % astr_error)
+            print("\nReturning to system with code %s\n" % astr_code)
             sys.exit(astr_code)
             
         def node_branch(self, astr_node, abranch):
@@ -331,6 +348,7 @@ class C_stree:
             self.ml_cwd                 = [str_treeRoot]
             self.msbranch_root          = C_snodeBranch([str_treeRoot])
             self.msnode_root            = self.msbranch_root.mdict_branch[str_treeRoot]
+            self.msnode_root.depth(0)
             self.msnode_root.msnode_parent      = self.msnode_root
             self.root()
             self.ml_allPaths            = self.ml_cwd[:]
@@ -402,6 +420,7 @@ class C_stree:
           snodeBranch   = C_snodeBranch(l_branchNodes)
           for node in l_branchNodes:
             snodeBranch.mdict_branch[node].msnode_parent = self.msnode_current
+            node.depth = self.msnode_current.msnode_parent.depth() + 1
           self.msnode_current.node_dictBranch(snodeBranch.mdict_branch)
           # Update the ml_allPaths
           self.paths_update(al_branchNodes)
@@ -502,7 +521,7 @@ class C_stree:
           for node in self.msnode_current.mdict_contents.keys():
             self.m_str.write('%s\n' % node)
           str_ls = self.m_str.strget()
-          print str_ls
+          print(str_ls)
           if len(astr_path): self.cdnode(str_cwd)
           return str_ls
           
@@ -526,7 +545,7 @@ class C_stree:
           if len(astr_path): self.cdnode(astr_path)
           self.m_str.write('%s' % self.msbranch_current.mdict_branch.keys())
           str_ls = self.m_str.strget()
-          print str_ls
+          print(str_ls)
           if len(astr_path): self.cdnode(str_cwd)
           return str_ls
           
@@ -538,7 +557,7 @@ class C_stree:
           str_cwd       = self.cwd()
           if len(astr_path): self.cdnode(astr_path)
           str_ls        = '%s' % self.msnode_current
-          print str_ls
+          print(str_ls)
           if len(astr_path): self.cdnode(str_cwd)
           return str_ls
           
@@ -555,7 +574,7 @@ class C_stree:
           b_contentsFlag        = self.msnode_current.mb_printContents
           self.msnode_current.mb_printContents = False
           str_ls        = '%s' % self.msnode_current
-          print str_ls
+          print(str_ls)
           if len(astr_path): self.cdnode(str_cwd)
           self.msnode_current.mb_printContents  = b_contentsFlag
           return str_ls
@@ -585,9 +604,9 @@ class C_stree:
         #
         # Simple error handling
         def error_exit(self, astr_action, astr_error, astr_code):
-            print "%s: FATAL error occurred" % self.mstr_obj
-            print "While %s," % astr_action
-            print "%s" % astr_error
-            print "\nReturning to system with code %s\n" % astr_code
+            print("%s: FATAL error occurred" % self.mstr_obj)
+            print("While %s," % astr_action)
+            print("%s" % astr_error)
+            print("\nReturning to system with code %s\n" % astr_code)
             sys.exit(astr_code)
 

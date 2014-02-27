@@ -18,6 +18,10 @@
 
         o 25 February 2014
           Resurrection as part of the fnndsc-netmap app.
+
+        o 27 February 2014
+          Cleanup, refactoring, re-indenting.
+          Fix class/instance variable mixups.
 """
 
 # System modules
@@ -26,7 +30,7 @@ import  sys
 import  re
 from    string                  import  *
 
-from    _common.systemMisc      import  *
+from    _common                 import  systemMisc as misc
 from    C_stringCore            import  *
 
 class C_snode:
@@ -40,67 +44,65 @@ class C_snode:
         the features described in the 'mdict_contents' dictionary. This
         dictionary can in turn contain other C_snodes.
         """
-  
-        # 
-        # Member variables
-        #
-        #       - Core variables
-        mstr_obj        = 'C_snode';            # name of object class
-        mstr_name       = 'void';               # name of object variable
-        m_id            = -1;                   # id of agent
-        m_iter          = 0;                    # current iteration in an
-                                                #       arbitrary processing 
-                                                #       scheme
-        m_verbosity     = 0;                    # debug related value for 
-                                                #       object
-        m_warnings      = 0;                    # show warnings 
-        
-        m_str           = None
-        
-        # The mdict_DB is the basic building block of the C_snode container 
-        #+ class. It is simply a dictionary that contains 'contents' that
-        #+ satisfy a given feature set described by 'mustInclude' and
-        #+ 'mustNotInclude'. 
-        #+ 
-        #+ In general: 
-        #+  'ml_path'           :       the node tracks its current path 
-        #+                              'position' in a tree of C_snodes
-        #+  'msnode_parent'     :       the parent node of this node -- useful
-        #+                              for tree structuring.
-        #+  'm_hitCount'        :       count of hits for all items branching
-        #+                              at this level. At the leaf level, this
-        #+                              contains the length of 'contents'.
-        #+  'ml_mustInclude'    :       descriptive trait for specific feature
-        #+                              level
-        #+  'ml_mustNotInclude' :       exclusion trait for specific feature
-        #+                              level
-        #+  'mdict_contents'    :       depending on position in the tree, 
-        #+                              this is either a list of leaves (i.e.
-        #+                              terminal points) or a list of
-        #+                              additional nodes.
-        #+                              
-        #+ The pattern of 'mustInclude' and 'mustNotInclude' uniquely 
-        #+ characterizes a particular level. "Deeper" features (i.e. features 
-        #+ further along the dictionary tree) must satisfy the combined set
-        #+ described by all the 'mustInclude' and 'mustNotInclude' traits of
-        #+ each higher level.
-        
-        mstr_nodeName           = ""
-        m_hitCount              = 0;
-        ml_mustInclude          = []
-        ml_canInclude           = []
-        ml_mustNotInclude       = []
-        ml_path                 = []
-        m_depth                 = 0
-        msnode_parent           = None
-        mdict_contents          = {}
-        mb_printMetaData        = True
-        mb_printContents        = True
-        mb_printPre             = False
         
         #
         # Methods
         #
+        def __init__(self,      astr_nodeName           = "",
+                                al_mustInclude          = [], 
+                                al_mustNotInclude       = [],
+                                ):
+            self.core_construct()
+            #       - Core variables
+            self.str_obj        = 'C_snode'      # name of object class
+            self.str_name       = 'void'         # name of object variable
+            self._id            = -1;            # id of agent
+            self._iter          = 0;             # current iteration in an
+                                                 #       arbitrary processing 
+                                                 #       scheme
+            self._verbosity     = 0;             # debug related value for 
+                                                 #       object
+            self._warnings      = 0;             # show warnings 
+            
+            self.sCore          = C_stringCore()
+
+            # The mdict_DB is the basic building block of the C_snode container 
+            #+ class. It is simply a dictionary that contains 'contents' that
+            #+ satisfy a given feature set described by 'mustInclude' and
+            #+ 'mustNotInclude'. 
+            #+ 
+            #+ In general: 
+            #+  'msnode_parent'     :       the parent node of this node -- useful
+            #+                              for tree structuring.
+            #+  'm_hitCount'        :       count of hits for all items branching
+            #+                              at this level. At the leaf level, this
+            #+                              contains the length of 'contents'.
+            #+  'ml_mustInclude'    :       descriptive trait for specific feature
+            #+                              level
+            #+  'ml_mustNotInclude' :       exclusion trait for specific feature
+            #+                              level
+            #+  'mdict_contents'    :       depending on position in the tree, 
+            #+                              this is either a list of leaves (i.e.
+            #+                              terminal points) or a list of
+            #+                              additional nodes.
+            #+                              
+            #+ The pattern of 'mustInclude' and 'mustNotInclude' uniquely 
+            #+ characterizes a particular level. "Deeper" features (i.e. features 
+            #+ further along the dictionary tree) must satisfy the combined set
+            #+ described by all the 'mustInclude' and 'mustNotInclude' traits of
+            #+ each higher level.
+            
+            self.snode_parent           = None
+            self._hitCount              = 0;
+            self.l_canInclude           = []
+            self._depth                 = 0
+            self.dict_contents          = {}
+            self.b_printMetaData        = True
+            self.b_printContents        = True
+            self.b_printPre             = False
+            self.str_nodeName           = astr_nodeName
+            self.l_mustInclude          = al_mustInclude
+            self.l_mustNotInclude       = al_mustNotInclude
 
         #
         # Getters and setters
@@ -109,99 +111,71 @@ class C_snode:
             Get/set the depth of this node.
             '''
             if len(args):
-                self.m_depth = args[0]
+                self._depth = args[0]
             else:
-                return self.m_depth
-
-
-        # Core methods - construct, initialise, id
-        def core_construct(     self,
-                                astr_obj        = 'C_scontainer',
-                                astr_name       = 'void',
-                                a_id            = -1,
-                                a_iter          = 0,
-                                a_verbosity     = 0,
-                                a_warnings      = 0) :
-            self.mstr_obj       = astr_obj
-            self.mstr_name      = astr_name
-            self.m_id           = a_id
-            self.m_iter         = a_iter
-            self.m_verbosity    = a_verbosity
-            self.m_warnings     = a_warnings
+                return self._depth
         
         def __str__(self, ab_printPre=False):
-            self.m_str.reset()
-            str_pre = ""
+            self.sCore.reset()
+            str_pre     = ""
             if not self.depth():
                 str_pre = "o"
             else:
                 str_pre = "+"
             # for i in range(0, self.depth()-2):
             #   str_pre = "%s| " % str_pre 
-            self.m_str.write('%s---%s\n' % (str_pre, self.mstr_nodeName))
-            if self.mb_printMetaData:
-              if ab_printPre: 
-                str_pre = "|"
-              else:
-                str_pre = " "
-              self.m_str.write('%s   +--depth............ %d\n' % (str_pre, self.m_depth))
-              self.m_str.write('%s   +--hitCount......... %d\n' % (str_pre, self.m_hitCount))
-              self.m_str.write('%s   +--mustInclude...... %s\n' % (str_pre, self.ml_mustInclude))
-              self.m_str.write('%s   +--mustNotInclude... %s\n' % (str_pre, self.ml_mustNotInclude))
-            contents    = len(self.mdict_contents)
-            if contents and self.mb_printContents:
-              self.m_str.write('%s   +--contents:\n' % str_pre )
-              elCount   = 0
-              lastKey   = self.mdict_contents.keys()[-1]
-              for element in self.mdict_contents.keys():
-                str_contents = str_blockIndent('%s' % 
-                        self.mdict_contents[element], 1, 8)
-                # if elCount <= contents - 1:
-                #   str_contents = re.sub(r'        ', '       |', str_contents)
-                b_printPre = True
-                if element == lastKey:
-                    b_printPre = False
-                self.m_str.write(str_contents)
-                # print(self.mdict_contents[element])
-                elCount   = elCount + 1
-              
-            return self.m_str.strget()
-            
-        def __init__(self,      astr_nodeName           = "",
-                                al_mustInclude          = [], 
-                                al_mustNotInclude       = [],
-                                ):
-            self.core_construct()
-            self.m_str                                  = C_stringCore()
-            self.mstr_nodeName                          = astr_nodeName
-            self.ml_mustInclude                         = al_mustInclude
-            self.ml_mustNotInclude                      = al_mustNotInclude
-            self.mdict_contents                         = {}
+            self.sCore.write('%s---%s\n' % (str_pre, self.str_nodeName))
+            if self.b_printMetaData:
+                if ab_printPre: 
+                    str_pre = "|"
+                else:
+                    str_pre = " "
+                self.sCore.write('%s   +--depth............ %d\n' % (str_pre, self._depth))
+                self.sCore.write('%s   +--hitCount......... %d\n' % (str_pre, self._hitCount))
+                self.sCore.write('%s   +--mustInclude...... %s\n' % (str_pre, self.l_mustInclude))
+                self.sCore.write('%s   +--mustNotInclude... %s\n' % (str_pre, self.l_mustNotInclude))
+            contents    = len(self.dict_contents)
+            if contents and self.b_printContents:
+                self.sCore.write('%s   +--contents:\n' % str_pre )
+                elCount   = 0
+                lastKey   = self.dict_contents.keys()[-1]
+                for element in self.dict_contents.keys():
+                    str_contents = misc.str_blockIndent('%s' % 
+                        self.dict_contents[element], 1, 8)
+                    # if elCount <= contents - 1:
+                    #   str_contents = re.sub(r'        ', '       |', str_contents)
+                    b_printPre = True
+                    if element == lastKey:
+                        b_printPre = False
+                    self.sCore.write(str_contents)
+                    # print(self.mdict_contents[element])
+                    elCount   = elCount + 1
+            return self.sCore.strget()
   
         #
         # Simple error handling
         def error_exit(self, astr_action, astr_error, astr_code):
-            print("%s: FATAL error occurred" % self.mstr_obj)
-            print("While %s," % astr_action)
-            print("%s" % astr_error)
-            print("\nReturning to system with code %s\n" % astr_code)
+            print("%s: FATAL error occurred"                % self.str_obj)
+            print("While %s,"                               % astr_action)
+            print("%s"                                      % astr_error)
+            print("\nReturning to system with code %s\n"    % astr_code)
             sys.exit(astr_code)
                                       
         def node_branch(self, al_keys, al_values):
-          """
-          For each node in <al_values>, add to internal contents
-          dictionary using key from <al_keys>.
-          """
-          if len(al_keys) != len(al_values):
-            self.error_exit("adding branch nodes", "#keys != #values", 1)
-          ldict = dict(zip(al_keys, al_values))
-          self.node_dictBranch(ldict)
+            """
+            For each node in <al_values>, add to internal contents
+            dictionary using key from <al_keys>.
+            """
+            if len(al_keys) != len(al_values):
+                self.error_exit("adding branch nodes", "#keys != #values", 1)
+            ldict = dict(zip(al_keys, al_values))
+            self.node_dictBranch(ldict)
               
         def node_dictBranch(self, adict):
-          """
-          Expands the internal mdict_contents with <adict>
-          """
-          self.mdict_contents.update(adict)
+            """
+            Expands the internal mdict_contents with <adict>
+            """
+            self.dict_contents.update(adict)
                               
 class C_snodeBranch:
         """
@@ -212,37 +186,11 @@ class C_snodeBranch:
         # 
         # Member variables
         #
-        #       - Core variables
-        mstr_obj        = 'C_snodeBranch';      # name of object class
-        mstr_name       = 'void';               # name of object variable
-        m_id            = -1;                   # id of agent
-        m_iter          = 0;                    # current iteration in an
-                                                #       arbitrary processing 
-                                                #       scheme
-        m_verbosity     = 0;                    # debug related value for 
-                                                #       object
-        m_warnings      = 0;                    # show warnings 
-                
-        mdict_branch    = {}
-        m_str           = None
+
         
         #
         # Methods
         #
-        # Core methods - construct, initialise, id
-        def core_construct(     self,
-                                astr_obj        = 'C_snodeBranch',
-                                astr_name       = 'void',
-                                a_id            = -1,
-                                a_iter          = 0,
-                                a_verbosity     = 0,
-                                a_warnings      = 0) :
-            self.mstr_obj       = astr_obj
-            self.mstr_name      = astr_name
-            self.m_id           = a_id
-            self.m_iter         = a_iter
-            self.m_verbosity    = a_verbosity
-            self.m_warnings     = a_warnings
         
         def __str__(self):
             self.m_str.reset()
@@ -251,31 +199,47 @@ class C_snodeBranch:
             return self.m_str.strget()
                     
         def __init__(self, al_branchNodes):
-            self.core_construct()
-            self.m_str          = C_stringCore()
-            self.mdict_branch   = {}
-            element     = al_branchNodes[0]
+            '''
+            Constructor.
+
+            If instantiated with a list of nodes, will create/populate 
+            internal dictionary with appropriate C_snodes.
+            '''
+
+            self.str_obj                = 'C_snodeBranch';  # name of object class
+            self.str_name               = 'void';           # name of object variable
+            self._id                    = -1;               # id of agent
+            self._iter                  = 0;                # current iteration in an
+                                                            #       arbitrary processing 
+                                                            #       scheme
+            self._verbosity             = 0;                # debug related value for 
+                                                            #       object
+            self._warnings              = 0;                # show warnings 
+                    
+            self.dict_branch            = {}
+            self.sCore                  = C_stringCore()
+            element                     = al_branchNodes[0]
             if isinstance(element, C_snode):
               for node in al_branchNodes:
-                self.mdict_branch[node] = node
+                self.dict_branch[node]  = node
             else:
               for node in al_branchNodes:
-                self.mdict_branch[node] = C_snode(node)
+                self.dict_branch[node]  = C_snode(node)
         #
         # Simple error handling
         def error_exit(self, astr_action, astr_error, astr_code):
-            print("%s: FATAL error occurred" % self.mstr_obj)
-            print("While %s," % astr_action)
-            print("%s" % astr_error)
-            print("\nReturning to system with code %s\n" % astr_code)
+            print("%s: FATAL error occurred"                % self.str_obj)
+            print("While %s,"                               % astr_action)
+            print("%s"                                      % astr_error)
+            print("\nReturning to system with code %s\n"    % astr_code)
             sys.exit(astr_code)
             
         def node_branch(self, astr_node, abranch):
-          """
-          Adds a branch to a node, i.e. depth addition. The given
-          node's mdict_contents is set to the abranch's mdict_branch.
-          """
-          self.mdict_branch[astr_node].node_dictBranch(abranch.mdict_branch)
+            """
+            Adds a branch to a node, i.e. depth addition. The given
+            node's mdict_contents is set to the abranch's mdict_branch.
+            """
+            self.dict_branch[astr_node].node_dictBranch(abranch.dict_branch)
 
 class C_stree:
         """
@@ -318,80 +282,93 @@ class C_stree:
         #
         # Methods
         #
-        # Core methods - construct, initialise, id
-        def core_construct(     self,
-                                astr_obj        = 'C_stree',
-                                astr_name       = 'void',
-                                a_id            = -1,
-                                a_iter          = 0,
-                                a_verbosity     = 0,
-                                a_warnings      = 0) :
-            self.mstr_obj       = astr_obj
-            self.mstr_name      = astr_name
-            self.m_id           = a_id
-            self.m_iter         = a_iter
-            self.m_verbosity    = a_verbosity
-            self.m_warnings     = a_warnings
-        
-        def __str__(self):
-            self.m_str.reset()
-            self.m_str.write('%s' % self.msnode_root)
-            return self.m_str.strget()
-        
-        def root(self):
-          """
-          Reset all nodes and branches to 'root'
-          """
-          str_treeRoot                  = '/'
-          self.ml_cwd                   = [str_treeRoot]
-          self.msnode_current           = self.msnode_root
-          self.msbranch_current         = self.msbranch_root
-        
         def __init__(self, al_rootBranch=[]):
             """
             Creates a tree structure and populates the "root" 
             branch.
             """
-            if not len(al_rootBranch):
-              al_rootBranch             = ['/']
-            if len(al_rootBranch):
-              if not isinstance(al_rootBranch, list):
-                al_rootBranch           = ['/']
-            self.core_construct()
-            self.m_str                  = C_stringCore()
-            str_treeRoot                = '/'
-            self.ml_cwd                 = [str_treeRoot]
-            self.msbranch_root          = C_snodeBranch([str_treeRoot])
-            self.msnode_root            = self.msbranch_root.mdict_branch[str_treeRoot]
-            self.msnode_root.depth(0)
-            self.msnode_root.msnode_parent      = self.msnode_root
-            self.root()
-            self.ml_allPaths            = self.ml_cwd[:]
-            if len(al_rootBranch) and al_rootBranch != ['/']:
-              self.mknode(al_rootBranch)
+            # 
+            # Member variables
+            #
+            #       - Core variables
+            self.str_obj                = 'C_stree';    # name of object class
+            self.str_name               = 'void';       # name of object variable
+            self._id                    = -1;           # id of agent
+            self._iter                  = 0;            # current iteration in an
+                                                        #       arbitrary processing 
+                                                        #       scheme
+            self._verbosity             = 0;            # debug related value for 
+                                                        #       object
+            self._warnings              = 0;            # show warnings 
             
+            self.l_allPaths             = []            # Each time a new C_snode is
+                                                        #+ added to the tree, its path
+                                                        #+ list is appended to this
+                                                        #+ list variable.            
+            if not len(al_rootBranch):
+                al_rootBranch           = ['/']
+            if len(al_rootBranch):
+                if not isinstance(al_rootBranch, list):
+                    al_rootBranch       = ['/']
+            self.sCore                  = C_stringCore()
+            str_treeRoot                = '/'
+            self.l_cwd                  = [str_treeRoot]
+            self.sbranch_root           = C_snodeBranch([str_treeRoot])
+            self.snode_root             = self.sbranch_root.dict_branch[str_treeRoot]
+            self.snode_root.depth(0)
+            self.snode_root.msnode_parent      = self.msnode_root
+            self.root()
+            self.l_allPaths             = self.l_cwd[:]
+            if len(al_rootBranch) and al_rootBranch != ['/']:
+                self.mknode(al_rootBranch)
+         
+        def __str__(self):
+            self.sCore.reset()
+            self.sCore.write('%s' % self.snode_root)
+            return self.sCore.strget()
+        
+        def root(self):
+            """
+            Reset all nodes and branches to 'root'.
+            """
+            str_treeRoot                = '/'
+            self.l_cwd                  = [str_treeRoot]
+            self.snode_current          = self.snode_root
+            self.sbranch_current        = self.sbranch_root
+        
+           
         def cwd(self):
-          l_cwd         = self.ml_cwd[:]
-          str_cwd       = '/'.join(l_cwd)
-          if len(str_cwd)>1: str_cwd = str_cwd[1:]
-          return str_cwd
+            '''
+            Return a UNIX FS type string of the current working 'directory'.
+            '''
+            l_cwd                       = self.l_cwd[:]
+            str_cwd                     = '/'.join(l_cwd)
+            if len(str_cwd)>1: str_cwd  = str_cwd[1:]
+            return str_cwd
           
         def pwd(self):
-          return self.cwd()
+            '''
+            Prints the cwd
+            '''
+            return self.cwd()
         
         def ptree(self):
-          return self.ml_allPaths
+            '''
+            Return all the paths in the tree.
+            '''
+            return self.l_allPaths
             
         def node_mustNotInclude(self, al_mustNotInclude, ab_reset=False):
-          """
-          Sets the <mustNotInclude> list of msnode_current
-          """
-          if ab_reset:
-            self.msnode_current.ml_mustNotInclude = al_mustNotInclude[:]
-          else:
-            l_current   = self.msnode_current.ml_mustNotInclude[:]
-            l_total     = l_current + al_mustNotInclude
-            self.msnode_current.ml_mustNotInclude = l_total[:]
+            """
+            Either appends or resets the <mustNotInclude> list of snode_current
+            depending on <ab_reset>.
+            """
+            if ab_reset:
+                self.snode_current.l_mustNotInclude = al_mustNotInclude[:]
+            else:
+                l_current   = self.snode_current.l_mustNotInclude[:]
+                l_total     = l_current + al_mustNotInclude
+                self.snode_current.l_mustNotInclude = l_total[:]
         
         def node_mustInclude(self, al_mustInclude, ab_reset=False):
           """

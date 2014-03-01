@@ -52,7 +52,6 @@ class C_snode:
                                 al_mustInclude          = [], 
                                 al_mustNotInclude       = [],
                                 ):
-            self.core_construct()
             #       - Core variables
             self.str_obj        = 'C_snode'      # name of object class
             self.str_name       = 'void'         # name of object variable
@@ -72,16 +71,16 @@ class C_snode:
             #+ 'mustNotInclude'. 
             #+ 
             #+ In general: 
-            #+  'msnode_parent'     :       the parent node of this node -- useful
+            #+  'snode_parent'      :       the parent node of this node -- useful
             #+                              for tree structuring.
-            #+  'm_hitCount'        :       count of hits for all items branching
+            #+  '_hitCount'         :       count of hits for all items branching
             #+                              at this level. At the leaf level, this
             #+                              contains the length of 'contents'.
-            #+  'ml_mustInclude'    :       descriptive trait for specific feature
+            #+  'l_mustInclude'     :       descriptive trait for specific feature
             #+                              level
-            #+  'ml_mustNotInclude' :       exclusion trait for specific feature
+            #+  'l_mustNotInclude'  :       exclusion trait for specific feature
             #+                              level
-            #+  'mdict_contents'    :       depending on position in the tree, 
+            #+  'dict_contents'     :       depending on position in the tree, 
             #+                              this is either a list of leaves (i.e.
             #+                              terminal points) or a list of
             #+                              additional nodes.
@@ -103,6 +102,7 @@ class C_snode:
             self.str_nodeName           = astr_nodeName
             self.l_mustInclude          = al_mustInclude
             self.l_mustNotInclude       = al_mustNotInclude
+            self.b_printPre             = False
 
         #
         # Getters and setters
@@ -115,7 +115,7 @@ class C_snode:
             else:
                 return self._depth
         
-        def __str__(self, ab_printPre=False):
+        def __str__(self):
             self.sCore.reset()
             str_pre     = ""
             if not self.depth():
@@ -126,7 +126,7 @@ class C_snode:
             #   str_pre = "%s| " % str_pre 
             self.sCore.write('%s---%s\n' % (str_pre, self.str_nodeName))
             if self.b_printMetaData:
-                if ab_printPre: 
+                if self.b_printPre: 
                     str_pre = "|"
                 else:
                     str_pre = " "
@@ -144,9 +144,10 @@ class C_snode:
                         self.dict_contents[element], 1, 8)
                     # if elCount <= contents - 1:
                     #   str_contents = re.sub(r'        ', '       |', str_contents)
-                    b_printPre = True
+                    self.b_printPre = True
                     if element == lastKey:
-                        b_printPre = False
+                        self.b_printPre = False
+                    print("%s: b_printPre == %d" % (self.str_nodeName, self.b_printPre))
                     self.sCore.write(str_contents)
                     # print(self.mdict_contents[element])
                     elCount   = elCount + 1
@@ -254,31 +255,7 @@ class C_stree:
         directory tree, with equivalent functions for 'cdnode', 'mknode'
         'lsnode'.
         """            
-        # 
-        # Member variables
-        #
-        #       - Core variables
-        mstr_obj        = 'C_stree';            # name of object class
-        mstr_name       = 'void';               # name of object variable
-        m_id            = -1;                   # id of agent
-        m_iter          = 0;                    # current iteration in an
-                                                #       arbitrary processing 
-                                                #       scheme
-        m_verbosity     = 0;                    # debug related value for 
-                                                #       object
-        m_warnings      = 0;                    # show warnings 
-        
-        m_str           = None
-        ml_cwd          = []
-        msbranch_current= None
-        msnode_current  = None
-        msnode_root     = C_snode('/')
-        msbranch_root   = None
-        ml_allPaths     = []                    # Each time a new C_snode is
-                                                #+ added to the tree, its path
-                                                #+ list is appended to this
-                                                #+ list variable.
-                
+
         #
         # Methods
         #
@@ -316,7 +293,7 @@ class C_stree:
             self.sbranch_root           = C_snodeBranch([str_treeRoot])
             self.snode_root             = self.sbranch_root.dict_branch[str_treeRoot]
             self.snode_root.depth(0)
-            self.snode_root.msnode_parent      = self.msnode_root
+            self.snode_root.snode_parent = self.snode_root
             self.root()
             self.l_allPaths             = self.l_cwd[:]
             if len(al_rootBranch) and al_rootBranch != ['/']:
@@ -371,234 +348,239 @@ class C_stree:
                 self.snode_current.l_mustNotInclude = l_total[:]
         
         def node_mustInclude(self, al_mustInclude, ab_reset=False):
-          """
-          Sets the <mustInclude> list of msnode_current
-          """
-          if ab_reset:
-            self.msnode_current.ml_mustInclude = al_mustInclude[:]
-          else:
-            l_current   = self.msnode_current.ml_mustInclude[:]
-            l_total     = l_current + al_mustInclude
-            self.msnode_current.ml_mustInclude = l_total[:]
+            """
+            Either appends or resets the <mustInclude> list of snode_current
+            depending on <ab_reset>.
+            """
+            if ab_reset:
+                self.snode_current.l_mustInclude = al_mustInclude[:]
+            else:
+                l_current   = self.snode_current.l_mustInclude[:]
+                l_total     = l_current + al_mustInclude
+                self.snode_current.l_mustInclude = l_total[:]
         
         def paths_update(self, al_branchNodes):
-          """
-          Add each node in <al_branchNodes> to the self.ml_cwd and
-          append the combined list to ml_allPaths
-          """
-          for node in al_branchNodes:
-            #print "appending %s" % node
-            l_pwd       = self.ml_cwd[:]
-            l_pwd.append(node)
-            #print "l_pwd: %s" % l_pwd
-            #print "ml_cwd: %s" % self.ml_cwd
-            self.ml_allPaths.append(l_pwd)
+            """
+            Add each node in <al_branchNodes> to the self.ml_cwd and
+            append the combined list to ml_allPaths. This method is
+            typically not called by a user, but by other methods in
+            this module.
+            """
+            for node in al_branchNodes:
+                #print "appending %s" % node
+                l_pwd       = self.l_cwd[:]
+                l_pwd.append(node)
+                #print "l_pwd: %s" % l_pwd
+                #print "ml_cwd: %s" % self.ml_cwd
+                self.l_allPaths.append(l_pwd)
                     
         def mknode(self, al_branchNodes):
-          """
-          Create a set of nodes (branches) at current node.
-          """
-          b_ret = True
-          # First check that none of these nodes already exist in the tree
-          l_branchNodes = []
-          for node in al_branchNodes:
-            l_path      = self.ml_cwd[:]
-            l_path.append(node)
-            #print l_path
-            #print self.ml_allPaths
-            #print self.b_pathOK(l_path)
-            if not self.b_pathOK(l_path):
-              l_branchNodes.append(node)
-          snodeBranch   = C_snodeBranch(l_branchNodes)
-          for node in l_branchNodes:
-            depth = self.msnode_current.depth()
-            # if (self.msnode_current != self.msnode_root):
-            snodeBranch.mdict_branch[node].depth(depth+1)
-            snodeBranch.mdict_branch[node].msnode_parent = self.msnode_current
-          self.msnode_current.node_dictBranch(snodeBranch.mdict_branch)
-          # Update the ml_allPaths
-          self.paths_update(al_branchNodes)
-          return b_ret
+            """
+            Create a set of nodes (branches) at current node. Analogous to
+            a UNIX mkdir call, however nodes can be any type (i.e. not 
+            just "directories" but also "files")
+            """
+            b_ret = True
+            # First check that none of these nodes already exist in the tree
+            l_branchNodes = []
+            for node in al_branchNodes:
+                l_path      = self.l_cwd[:]
+                l_path.append(node)
+                #print l_path
+                #print self.ml_allPaths
+                #print self.b_pathOK(l_path)
+                if not self.b_pathOK(l_path):
+                    l_branchNodes.append(node)
+            snodeBranch   = C_snodeBranch(l_branchNodes)
+            for node in l_branchNodes:
+                depth = self.snode_current.depth()
+                # if (self.msnode_current != self.msnode_root):
+                snodeBranch.dict_branch[node].depth(depth+1)
+                snodeBranch.dict_branch[node].snode_parent = self.snode_current
+            self.snode_current.node_dictBranch(snodeBranch.dict_branch)
+            # Update the ml_allPaths
+            self.paths_update(al_branchNodes)
+            return b_ret
         
         def b_pathOK(self, al_path):
-          """
-          Checks if the absolute path specified in the al_path
-          is valid for current tree
-          """
-          b_OK  = True
-          try:          self.ml_allPaths.index(al_path)
-          except:       b_OK    = False
-          return b_OK
+            """
+            Checks if the absolute path specified in the al_path
+            is valid for current tree
+            """
+            b_OK  = True
+            try:          self.l_allPaths.index(al_path)
+            except:       b_OK    = False
+            return b_OK
         
         def b_pathInTree(self, astr_path):
-          """
-          Converts a string <astr_path> specifier to a list-based
-          *absolute* lookup, i.e. "/node1/node2/node3" is converted
-          to ['/' 'node1' 'node2' 'node3'].
+            """
+            Converts a string <astr_path> specifier to a list-based
+            *absolute* lookup, i.e. "/node1/node2/node3" is converted
+            to ['/' 'node1' 'node2' 'node3'].
           
-          The method also understands a paths that start with: '..' or
-          combination of '../../..' and is also aware that the root
-          node is its own parent.
+            The method also understands a paths that start with: '..' or
+            combination of '../../..' and is also aware that the root
+            node is its own parent.
           
-          If the path list conversion is valid (i.e. exists in the
-          space of existing paths, ml_allPaths), return True and the
-          destination path list; else return False and the current
-          path list.
-          """
-          if astr_path == '/':  return True, ['/']
-          al_path               = astr_path.split('/')
-          # Check for absolute path
-          if not len(al_path[0]):
-            al_path[0]          = '/'
-            #print "returning %s : %s" % (self.b_pathOK(al_path), al_path)
-            return self.b_pathOK(al_path), al_path
-          # Here we are in relative mode...
-          # First, resolve any leading '..'
-          l_path        = self.ml_cwd[:]
-          if(al_path[0] == '..'):
-            while(al_path[0] == '..' and len(al_path)):
-              l_path    = l_path[0:-1]
-              if(len(al_path) >= 2): al_path   = al_path[1:]
-              else: al_path[0] = ''
-              #print "l_path  = %s" % l_path
-              #print "al_path = %s (%d)" % (al_path, len(al_path[0]))
-            if(len(al_path[0])):  
-              #print "extending %s with %s" % (l_path, al_path)  
-              l_path.extend(al_path)
-          else:
-            l_path      = self.ml_cwd
-            l_path.extend(al_path)
-          #print "final path list = %s (%d)" % (l_path, len(l_path))
-          if(len(l_path)>=1 and l_path[0] != '/'):      l_path.insert(0, '/')  
-          if(len(l_path)>1):            l_path[0]       = ''
-          if(not len(l_path)):          l_path          = ['/']
-          #TODO: Possibly check for trailing '/', i.e. list ['']
-          str_path      = '/'.join(l_path)
-          #print "final path str  = %s" % str_path
-          b_valid, al_path = self.b_pathInTree(str_path)
-          return b_valid, al_path
+            If the path list conversion is valid (i.e. exists in the
+            space of existing paths, l_allPaths), return True and the
+            destination path list; else return False and the current
+            path list.
+            """
+            if astr_path == '/':  return True, ['/']
+            al_path               = astr_path.split('/')
+            # Check for absolute path
+            if not len(al_path[0]):
+                al_path[0]          = '/'
+                #print "returning %s : %s" % (self.b_pathOK(al_path), al_path)
+                return self.b_pathOK(al_path), al_path
+            # Here we are in relative mode...
+            # First, resolve any leading '..'
+            l_path        = self.l_cwd[:]
+            if(al_path[0] == '..'):
+                while(al_path[0] == '..' and len(al_path)):
+                    l_path    = l_path[0:-1]
+                    if(len(al_path) >= 2): al_path   = al_path[1:]
+                    else: al_path[0] = ''
+                    #print "l_path  = %s" % l_path
+                    #print "al_path = %s (%d)" % (al_path, len(al_path[0]))
+                if(len(al_path[0])):  
+                    #print "extending %s with %s" % (l_path, al_path)  
+                    l_path.extend(al_path)
+            else:
+                l_path      = self.l_cwd
+                l_path.extend(al_path)
+            #print "final path list = %s (%d)" % (l_path, len(l_path))
+            if(len(l_path)>=1 and l_path[0] != '/'):      l_path.insert(0, '/')  
+            if(len(l_path)>1):            l_path[0]       = ''
+            if(not len(l_path)):          l_path          = ['/']
+            #TODO: Possibly check for trailing '/', i.e. list ['']
+            str_path      = '/'.join(l_path)
+            #print "final path str  = %s" % str_path
+            b_valid, al_path = self.b_pathInTree(str_path)
+            return b_valid, al_path
           
         def cdnode(self, astr_path):
-          """
-          Change working node to astr_path. 
-          The path is converted to a list, split on '/'
+            """
+            Change working node to astr_path. 
+            The path is converted to a list, split on '/'
           
-          Returns the cdnode path
+            Returns the cdnode path
           
-          """
+            """
           
-          # Start at the root and then navigate to the
-          # relevant node
-          l_absPath             = []
-          b_valid, l_absPath    = self.b_pathInTree(astr_path)
-          if b_valid:
-            #print "got cdpath = %s" % l_absPath
-            self.ml_cwd           = l_absPath[:]
-            self.msnode_current   = self.msnode_root
-            self.msbranch_current = self.msbranch_root
-            #print l_absPath
-            for node in l_absPath[1:]:
-              self.msnode_current = self.msnode_current.mdict_contents[node]
-            self.msbranch_current.mdict_branch = self.msnode_current.msnode_parent.mdict_contents
-          return self.ml_cwd
+            # Start at the root and then navigate to the
+            # relevant node
+            l_absPath             = []
+            b_valid, l_absPath    = self.b_pathInTree(astr_path)
+            if b_valid:
+                #print "got cdpath = %s" % l_absPath
+                self.l_cwd              = l_absPath[:]
+                self.snode_current      = self.snode_root
+                self.sbranch_current    = self.sbranch_root
+                #print l_absPath
+                for node in l_absPath[1:]:
+                    self.snode_current = self.snode_current.dict_contents[node]
+                self.sbranch_current.dict_branch = self.snode_current.snode_parent.dict_contents
+            return self.l_cwd
                     
         def ls(self, astr_path=""):
-          return self.str_lsnode(astr_path)
+            return self.str_lsnode(astr_path)
         
         def str_lsnode(self, astr_path=""):
-          """
-          Print/return the set of nodes branching from current node as string
-          """
-          self.m_str.reset()
-          str_cwd       = self.cwd()
-          if len(astr_path): self.cdnode(astr_path)
-          for node in self.msnode_current.mdict_contents.keys():
-            self.m_str.write('%s\n' % node)
-          str_ls = self.m_str.strget()
-          print(str_ls)
-          if len(astr_path): self.cdnode(str_cwd)
-          return str_ls
+            """
+            Print/return the set of nodes branching from current node as string
+            """
+            self.sCore.reset()
+            str_cwd       = self.cwd()
+            if len(astr_path): self.cdnode(astr_path)
+            for node in self.snode_current.dict_contents.keys():
+                self.sCore.write('%s\n' % node)
+            str_ls = self.sCore.strget()
+            print(str_ls)
+            if len(astr_path): self.cdnode(str_cwd)
+            return str_ls
           
         def lst_lsnode(self, astr_path=""):
-          """
-          Return the set of nodes branching from current node as list
-          """
-          self.m_str.reset()
-          str_cwd       = self.cwd()
-          if len(astr_path): self.cdnode(astr_path)
-          lst = self.msnode_current.mdict_contents.keys()
-          if len(astr_path): self.cdnode(str_cwd)
-          return lst
+            """
+            Return the set of nodes branching from current node as list
+            """
+            self.sCore.reset()
+            str_cwd       = self.cwd()
+            if len(astr_path): self.cdnode(astr_path)
+            lst = self.snode_current.dict_contents.keys()
+            if len(astr_path): self.cdnode(str_cwd)
+            return lst
         
         def lsbranch(self, astr_path=""):
-          """
-          Print/return the set of nodes in current branch
-          """
-          self.m_str.reset()
-          str_cwd       = self.cwd()
-          if len(astr_path): self.cdnode(astr_path)
-          self.m_str.write('%s' % self.msbranch_current.mdict_branch.keys())
-          str_ls = self.m_str.strget()
-          print(str_ls)
-          if len(astr_path): self.cdnode(str_cwd)
-          return str_ls
+            """
+            Print/return the set of nodes in current branch
+            """
+            self.sCore.reset()
+            str_cwd       = self.cwd()
+            if len(astr_path): self.cdnode(astr_path)
+            self.sCore.write('%s' % self.sbranch_current.dict_branch.keys())
+            str_ls = self.sCore.strget()
+            print(str_ls)
+            if len(astr_path): self.cdnode(str_cwd)
+            return str_ls
           
         def lstree(self, astr_path=""):
-          """
-          Print/return the tree from the current node.
-          """
-          self.m_str.reset()
-          str_cwd       = self.cwd()
-          if len(astr_path): self.cdnode(astr_path)
-          str_ls        = '%s' % self.msnode_current
-          print(str_ls)
-          if len(astr_path): self.cdnode(str_cwd)
-          return str_ls
+            """
+            Print/return the tree from the current node.
+            """
+            self.sCore.reset()
+            str_cwd       = self.cwd()
+            if len(astr_path): self.cdnode(astr_path)
+            str_ls        = '%s' % self.snode_current
+            print(str_ls)
+            if len(astr_path): self.cdnode(str_cwd)
+            return str_ls
           
         def lsmeta(self, astr_path=""):
-          """
-          Print/return the "meta" information of the node, i.e.
+            """
+            Print/return the "meta" information of the node, i.e.
                 o mustInclude
                 o mustNotInclude
                 o hitCount
-          """
-          self.m_str.reset()
-          str_cwd       = self.cwd()
-          if len(astr_path): self.cdnode(astr_path)
-          b_contentsFlag        = self.msnode_current.mb_printContents
-          self.msnode_current.mb_printContents = False
-          str_ls        = '%s' % self.msnode_current
-          print(str_ls)
-          if len(astr_path): self.cdnode(str_cwd)
-          self.msnode_current.mb_printContents  = b_contentsFlag
-          return str_ls
+            """
+            self.sCore.reset()
+            str_cwd       = self.cwd()
+            if len(astr_path): self.cdnode(astr_path)
+            b_contentsFlag        = self.snode_current.b_printContents
+            self.snode_current.b_printContents = False
+            str_ls        = '%s' % self.snode_current
+            print(str_ls)
+            if len(astr_path): self.cdnode(str_cwd)
+            self.snode_current.b_printContents  = b_contentsFlag
+            return str_ls
           
         def treeRecurse(self, astr_startPath = '/', afunc_nodeEval = None):
-          """
-          Recursively walk through a C_stree, starting from node
-          <astr_startPath>.
+            """
+            Recursively walk through a C_stree, starting from node
+            <astr_startPath>.
 
-          The <afunc_nodeEval> is a function that is called on a node
-          path. It is of form:
+            The <afunc_nodeEval> is a function that is called on a node
+            path. It is of form:
 
                 afunc_nodeEval(astr_startPath)
 
-          and must return either True or False.
-          """
-          [b_valid, l_path ] = self.b_pathInTree(astr_startPath)
-          if b_valid and afunc_nodeEval:
-            b_valid     = afunc_nodeEval(astr_startPath)
-          #print 'processing node: %s' % astr_startPath
-          if b_valid:
-            for node in self.lst_lsnode(astr_startPath):
-              if astr_startPath == '/': recursePath = "/%s" % node
-              else: recursePath = '%s/%s' % (astr_startPath, node)
-              self.treeRecurse(recursePath, afunc_nodeEval)
+            and must return either True or False.
+            """
+            [b_valid, l_path ] = self.b_pathInTree(astr_startPath)
+            if b_valid and afunc_nodeEval:
+                b_valid     = afunc_nodeEval(astr_startPath)
+            #print 'processing node: %s' % astr_startPath
+            if b_valid:
+                for node in self.lst_lsnode(astr_startPath):
+                    if astr_startPath == '/': recursePath = "/%s" % node
+                    else: recursePath = '%s/%s' % (astr_startPath, node)
+                    self.treeRecurse(recursePath, afunc_nodeEval)
   
         #
         # Simple error handling
         def error_exit(self, astr_action, astr_error, astr_code):
-            print("%s: FATAL error occurred" % self.mstr_obj)
+            print("%s: FATAL error occurred" % self.str_obj)
             print("While %s," % astr_action)
             print("%s" % astr_error)
             print("\nReturning to system with code %s\n" % astr_code)

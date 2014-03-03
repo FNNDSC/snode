@@ -33,6 +33,58 @@ from    string                  import  *
 from    _common                 import  systemMisc as misc
 from    C_stringCore            import  *
 
+class C_meta:
+        '''
+        A "base" class containing 'meta' data pertinent to a node.
+        '''
+
+        def __init__(self):
+            self._hitCount              = 0;
+            self.l_canInclude           = []
+            self.l_mustInclude          = al_mustInclude
+            self.l_mustNotInclude       = al_mustNotInclude
+            self.b_printPre             = False                
+            self.sCore                  = C_stringCore()
+
+        #
+        ## Getters/setters
+
+        def mustInclude(self, *args):
+            '''
+            Get / set the [mustInclude].
+            '''
+            if len(args):
+                self.l_mustInclude = args[0]
+            else:
+                return l_mustInclude
+
+        def mustNotInclude(self, *args):
+            '''
+            Get / set the [mustInclude].
+            '''
+            if len(args):
+                self.l_mustNotInclude = args[0]
+            else:
+                return l_mustNotInclude
+
+        def canInclude(self, *args):
+            '''
+            Get / set the [mustInclude].
+            '''
+            if len(args):
+                self.l_canInclude = args[0]
+            else:
+                return l_canInclude
+
+        #
+        ## core overloads
+
+        def __str__(self):
+            self.sCore.write('%s   +--hitCount......... %d\n' % (str_pre, self._hitCount))
+            self.sCore.write('%s   +--mustInclude...... %s\n' % (str_pre, self.l_mustInclude))
+            self.sCore.write('%s   +--mustNotInclude... %s\n' % (str_pre, self.l_mustNotInclude))        
+
+
 class C_snode:
         """
         A "container" node class. This container is the

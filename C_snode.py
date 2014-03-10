@@ -33,6 +33,8 @@ from    string                  import  *
 from    _common                 import  systemMisc as misc
 from    C_stringCore            import  *
 
+from IPython.core.debugger      import Tracer; 
+
 class C_meta:
         '''
         A "base" class containing 'meta' data pertinent to a node.
@@ -166,6 +168,15 @@ class C_snode:
                 self._depth = args[0]
             else:
                 return self._depth
+
+        def printPre(self, *args):
+            '''
+            get/set the str_pre string.
+            '''
+            if len(args):
+                self.b_printPre = args[0]
+            else:
+                return self.b_printPre
         
         def __str__(self):
             self.sCore.reset()
@@ -174,34 +185,33 @@ class C_snode:
                 str_pre = "o"
             else:
                 str_pre = "+"
-            # for i in range(0, self.depth()-2):
-            #   str_pre = "%s| " % str_pre 
             self.sCore.write('%s---%s\n' % (str_pre, self.str_nodeName))
             if self.b_printMetaData:
                 if self.b_printPre: 
                     str_pre = "|"
                 else:
                     str_pre = " "
-                self.sCore.write('%s   +--depth............ %d\n' % (str_pre, self._depth))
-                self.sCore.write('%s   +--hitCount......... %d\n' % (str_pre, self._hitCount))
-                self.sCore.write('%s   +--mustInclude...... %s\n' % (str_pre, self.l_mustInclude))
-                self.sCore.write('%s   +--mustNotInclude... %s\n' % (str_pre, self.l_mustNotInclude))
+                self.sCore.write('%s  +--depth............ %d\n' % (str_pre, self._depth))
+                self.sCore.write('%s  +--hitCount......... %d\n' % (str_pre, self._hitCount))
+                self.sCore.write('%s  +--mustInclude...... %s\n' % (str_pre, self.l_mustInclude))
+                self.sCore.write('%s  +--mustNotInclude... %s\n' % (str_pre, self.l_mustNotInclude))
+                # print("%s: b_printPre == %d, current" % (self.str_nodeName, self.b_printPre))
+
             contents    = len(self.dict_contents)
             if contents and self.b_printContents:
-                self.sCore.write('%s   +--contents:\n' % str_pre )
+                self.sCore.write('%s  +--contents:\n' % str_pre )
                 elCount   = 0
                 lastKey   = self.dict_contents.keys()[-1]
                 for element in self.dict_contents.keys():
-                    str_contents = misc.str_blockIndent('%s' % 
-                        self.dict_contents[element], 1, 8)
-                    # if elCount <= contents - 1:
-                    #   str_contents = re.sub(r'        ', '       |', str_contents)
-                    self.b_printPre = True
+                    self.dict_contents[element].printPre(True)
                     if element == lastKey:
-                        self.b_printPre = False
-                    print("%s: b_printPre == %d" % (self.str_nodeName, self.b_printPre))
+                        self.dict_contents[element].printPre(False)
+                    str_contents = misc.str_blockIndent('%s' % 
+                        self.dict_contents[element], 1, 8, tabBoundary = "")
+                    # str_contents = re.sub(r'                ', 'xxxxxxxx|xxxxxxx', str_contents)
+                    if self.dict_contents[element].printPre():
+                        str_contents = re.sub(r'                ', '        |       ', str_contents)
                     self.sCore.write(str_contents)
-                    # print(self.mdict_contents[element])
                     elCount   = elCount + 1
             return self.sCore.strget()
   

@@ -256,10 +256,10 @@ class C_snodeBranch:
         #
         
         def __str__(self):
-            self.m_str.reset()
-            for node in self.mdict_branch.keys():
-              self.m_str.write('%s' % self.mdict_branch[node])
-            return self.m_str.strget()
+            self.sCore.reset()
+            for node in self.dict_branch.keys():
+              self.sCore.write('%s' % self.dict_branch[node])
+            return self.sCore.strget()
                     
         def __init__(self, al_branchNodes):
             '''

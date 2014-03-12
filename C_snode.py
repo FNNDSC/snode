@@ -33,23 +33,37 @@ from    string                  import  *
 from    _common                 import  systemMisc as misc
 from    C_stringCore            import  *
 
-from IPython.core.debugger      import Tracer; 
+import  itertools
+
+from    IPython.core.debugger   import Tracer; 
 
 class C_meta:
         '''
         A "base" class containing 'meta' data pertinent to a node.
         '''
 
-        def __init__(self):
+        def __init__(self, al_mustInclude          = [], 
+                           al_mustNotInclude       = []):
             self._hitCount              = 0;
             self.l_canInclude           = []
             self.l_mustInclude          = al_mustInclude
             self.l_mustNotInclude       = al_mustNotInclude
             self.b_printPre             = False                
             self.sCore                  = C_stringCore()
+            self._depth                 = 0
+            self.str_pre                = ' '
 
         #
         ## Getters/setters
+
+        def pre(self, *args):
+            '''
+            Get / set the str_pre
+            '''
+            if len(args):
+                self.str_pre = args[0]
+            else:
+                return self.str_pre
 
         def mustInclude(self, *args):
             '''
@@ -78,13 +92,24 @@ class C_meta:
             else:
                 return l_canInclude
 
+        def depth(self, *args):
+            '''
+            Get/set the depth
+            '''
+            if len(args):
+                self._depth = args[0]
+            else:
+                return self._depth
+
         #
         ## core overloads
 
         def __str__(self):
-            self.sCore.write('%s   +--hitCount......... %d\n' % (str_pre, self._hitCount))
-            self.sCore.write('%s   +--mustInclude...... %s\n' % (str_pre, self.l_mustInclude))
-            self.sCore.write('%s   +--mustNotInclude... %s\n' % (str_pre, self.l_mustNotInclude))        
+            self.sCore.write('%s   +--depth............ %d\n' % (self.str_pre, self._depth))
+            self.sCore.write('%s   +--hitCount......... %d\n' % (self.str_pre, self._hitCount))
+            self.sCore.write('%s   +--mustInclude...... %s\n' % (self.str_pre, self.l_mustInclude))
+            self.sCore.write('%s   +--mustNotInclude... %s\n' % (self.str_pre, self.l_mustNotInclude))
+            return self.sCore.strget()        
 
 
 class C_snode:
@@ -94,8 +119,8 @@ class C_snode:
         structures.
   
         The C_snode defines a single 'node' in this tree. It contains
-        two lists, 'ml_mustInclude' and 'ml_mustNotInclude' that define
-        the features described in the 'mdict_contents' dictionary. This
+        two lists, 'l_mustInclude' and 'l_mustNotInclude' that define
+        the features described in the 'd_nodes' dictionary. This
         dictionary can in turn contain other C_snodes.
         """
         
@@ -104,7 +129,7 @@ class C_snode:
         #
         def __init__(self,      astr_nodeName           = "",
                                 al_mustInclude          = [], 
-                                al_mustNotInclude       = [],
+                                al_mustNotInclude       = []
                                 ):
             #       - Core variables
             self.str_obj        = 'C_snode'      # name of object class
@@ -119,8 +144,8 @@ class C_snode:
             
             self.sCore          = C_stringCore()
 
-            # The mdict_DB is the basic building block of the C_snode container 
-            #+ class. It is simply a dictionary that contains 'contents' that
+            # The d_nodes is the basic building block of the C_snode container 
+            #+ class. It is simply a dictionary that contains 'nodes' that
             #+ satisfy a given feature set described by 'mustInclude' and
             #+ 'mustNotInclude'. 
             #+ 
@@ -134,10 +159,9 @@ class C_snode:
             #+                              level
             #+  'l_mustNotInclude'  :       exclusion trait for specific feature
             #+                              level
-            #+  'dict_contents'     :       depending on position in the tree, 
-            #+                              this is either a list of leaves (i.e.
-            #+                              terminal points) or a list of
-            #+                              additional nodes.
+            #+  'd_nodes'           :       dictionary of child nodes branching
+            #+                              from this node
+            #+  'd_data'            :       a dictionary of data for *this* node
             #+                              
             #+ The pattern of 'mustInclude' and 'mustNotInclude' uniquely 
             #+ characterizes a particular level. "Deeper" features (i.e. features 
@@ -145,17 +169,14 @@ class C_snode:
             #+ described by all the 'mustInclude' and 'mustNotInclude' traits of
             #+ each higher level.
             
+            self.meta                   = C_meta()
             self.snode_parent           = None
-            self._hitCount              = 0;
-            self.l_canInclude           = []
-            self._depth                 = 0
-            self.dict_contents          = {}
+            self.d_nodes                = {}
+            self.d_data                 = {}
             self.b_printMetaData        = True
             self.b_printContents        = True
             self.b_printPre             = False
             self.str_nodeName           = astr_nodeName
-            self.l_mustInclude          = al_mustInclude
-            self.l_mustNotInclude       = al_mustNotInclude
             self.b_printPre             = False
 
         #
@@ -165,9 +186,9 @@ class C_snode:
             Get/set the depth of this node.
             '''
             if len(args):
-                self._depth = args[0]
+                self.meta.depth(args[0])
             else:
-                return self._depth
+                return self.meta.depth()
 
         def printPre(self, *args):
             '''
@@ -186,30 +207,29 @@ class C_snode:
             else:
                 str_pre = "+"
             self.sCore.write('%s---%s\n' % (str_pre, self.str_nodeName))
-            if self.b_printMetaData:
-                if self.b_printPre: 
-                    str_pre = "|"
-                else:
-                    str_pre = " "
-                self.sCore.write('%s  +--depth............ %d\n' % (str_pre, self._depth))
-                self.sCore.write('%s  +--hitCount......... %d\n' % (str_pre, self._hitCount))
-                self.sCore.write('%s  +--mustInclude...... %s\n' % (str_pre, self.l_mustInclude))
-                self.sCore.write('%s  +--mustNotInclude... %s\n' % (str_pre, self.l_mustNotInclude))
-                # print("%s: b_printPre == %d, current" % (self.str_nodeName, self.b_printPre))
+            if self.b_printPre: 
+                str_pre = "|"
+            else:
+                str_pre = " "
+            self.meta.pre(str_pre)
+            if self.b_printMetaData: self.sCore.write('%s' % self.meta)
 
-            contents    = len(self.dict_contents)
-            if contents and self.b_printContents:
-                self.sCore.write('%s  +--contents:\n' % str_pre )
+            for key, value in self.d_data.iteritems():
+                self.sCore.write('%s   +--%-17s %s\n' % (str_pre, key, value))
+
+            nodeCount     = len(self.d_nodes)
+            if nodeCount and self.b_printContents:
+                self.sCore.write('%s  +----+\n' % str_pre )
                 elCount   = 0
-                lastKey   = self.dict_contents.keys()[-1]
-                for element in self.dict_contents.keys():
-                    self.dict_contents[element].printPre(True)
-                    if element == lastKey:
-                        self.dict_contents[element].printPre(False)
+                lastKey   = self.d_nodes.keys()[-1]
+                for node in self.d_nodes.keys():
+                    self.d_nodes[node].printPre(True)
+                    if node == lastKey:
+                        self.d_nodes[node].printPre(False)
                     str_contents = misc.str_blockIndent('%s' % 
-                        self.dict_contents[element], 1, 8, tabBoundary = "")
+                        self.d_nodes[node], 1, 8, tabBoundary = "")
                     # str_contents = re.sub(r'                ', 'xxxxxxxx|xxxxxxx', str_contents)
-                    if self.dict_contents[element].printPre():
+                    if self.d_nodes[node].printPre():
                         str_contents = re.sub(r'                ', '        |       ', str_contents)
                     self.sCore.write(str_contents)
                     elCount   = elCount + 1
@@ -236,9 +256,9 @@ class C_snode:
               
         def node_dictBranch(self, adict):
             """
-            Expands the internal mdict_contents with <adict>
+            Expands the internal md_nodes with <adict>
             """
-            self.dict_contents.update(adict)
+            self.d_nodes.update(adict)
                               
 class C_snodeBranch:
         """
@@ -300,7 +320,7 @@ class C_snodeBranch:
         def node_branch(self, astr_node, abranch):
             """
             Adds a branch to a node, i.e. depth addition. The given
-            node's mdict_contents is set to the abranch's mdict_branch.
+            node's md_nodes is set to the abranch's mdict_branch.
             """
             self.dict_branch[astr_node].node_dictBranch(abranch.dict_branch)
 
@@ -464,6 +484,18 @@ class C_stree:
             self.paths_update(al_branchNodes)
             return b_ret
         
+        def touch(self, name, data):
+            '''
+            Append 'data' to the current node d_data dictionary under key 'name'
+            '''
+            b_OK = True
+            # print("here!")
+            # print(self.snode_current)
+            # print(self.snode_current.d_nodes)
+            self.snode_current.d_data[name] = data
+            # print(self.snode_current)
+            return b_OK
+
         def b_pathOK(self, al_path):
             """
             Checks if the absolute path specified in the al_path
@@ -542,8 +574,8 @@ class C_stree:
                 self.sbranch_current    = self.sbranch_root
                 #print l_absPath
                 for node in l_absPath[1:]:
-                    self.snode_current = self.snode_current.dict_contents[node]
-                self.sbranch_current.dict_branch = self.snode_current.snode_parent.dict_contents
+                    self.snode_current = self.snode_current.d_nodes[node]
+                self.sbranch_current.dict_branch = self.snode_current.snode_parent.d_nodes
             return self.l_cwd
                     
         def ls(self, astr_path=""):
@@ -556,7 +588,7 @@ class C_stree:
             self.sCore.reset()
             str_cwd       = self.cwd()
             if len(astr_path): self.cdnode(astr_path)
-            for node in self.snode_current.dict_contents.keys():
+            for node in self.snode_current.d_nodes.keys():
                 self.sCore.write('%s\n' % node)
             str_ls = self.sCore.strget()
             print(str_ls)
@@ -570,7 +602,7 @@ class C_stree:
             self.sCore.reset()
             str_cwd       = self.cwd()
             if len(astr_path): self.cdnode(astr_path)
-            lst = self.snode_current.dict_contents.keys()
+            lst = self.snode_current.d_nodes.keys()
             if len(astr_path): self.cdnode(str_cwd)
             return lst
         

@@ -82,6 +82,10 @@ if b_treeBuild:
   STree.mknode(['white', 'brown'])  
   STree.cdnode('/meat/chicken/brown')
   STree.mknode(['hen', 'rooster'])
+  STree.cdnode('/meat/chicken/brown/rooster')
+  STree.touch('name', 'Bob')
+  STree.touch('size', 12)
+  STree.touch('desc', ['one', 'two', 'three'])
   print(STree)
   S = STree
 

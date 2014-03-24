@@ -219,7 +219,7 @@ class C_snode:
 
             nodeCount     = len(self.d_nodes)
             if nodeCount and self.b_printContents:
-                self.sCore.write('%s  +----+\n' % str_pre )
+                self.sCore.write('%s   +---+\n' % str_pre )
                 elCount   = 0
                 lastKey   = self.d_nodes.keys()[-1]
                 for node in self.d_nodes.keys():

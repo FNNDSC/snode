@@ -86,6 +86,7 @@ if b_treeBuild:
   STree.touch('name', 'Bob')
   STree.touch('size', 12)
   STree.touch('desc', ['one', 'two', 'three'])
+  STree.mknode(['chick1', 'chick2'])
   print(STree)
   S = STree
 

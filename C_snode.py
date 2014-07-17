@@ -2,16 +2,16 @@
 
 """
     NAME
-    
+
         C_snode, C_snodeBranch, C_stree
-        
+
     DESCRIPTION
-    
+
         These three classes are used to construct tree-structures
         composed of 'C_snode' instances. Branches contain dictionaries
         of C_snodes, while leaves contain dictionaries of a specific
         external data class.
-        
+
     HISTORY
         o 26 March 2008
           Initial design and coding
@@ -35,20 +35,20 @@ from    C_stringCore            import  *
 
 import  itertools
 
-from    IPython.core.debugger   import Tracer; 
+# from    IPython.core.debugger   import Tracer; 
 
 class C_meta:
         '''
         A "base" class containing 'meta' data pertinent to a node.
         '''
 
-        def __init__(self, al_mustInclude          = [], 
+        def __init__(self, al_mustInclude          = [],
                            al_mustNotInclude       = []):
             self._hitCount              = 0;
             self.l_canInclude           = []
             self.l_mustInclude          = al_mustInclude
             self.l_mustNotInclude       = al_mustNotInclude
-            self.b_printPre             = False                
+            self.b_printPre             = False
             self.sCore                  = C_stringCore()
             self._depth                 = 0
             self.str_pre                = ' '
@@ -109,7 +109,7 @@ class C_meta:
             self.sCore.write('%s   +--hitCount......... %d\n' % (self.str_pre, self._hitCount))
             self.sCore.write('%s   +--mustInclude...... %s\n' % (self.str_pre, self.l_mustInclude))
             self.sCore.write('%s   +--mustNotInclude... %s\n' % (self.str_pre, self.l_mustNotInclude))
-            return self.sCore.strget()        
+            return self.sCore.strget()
 
 
 class C_snode:
@@ -117,18 +117,18 @@ class C_snode:
         A "container" node class. This container is the
         basic building block for larger tree-like database
         structures.
-  
+
         The C_snode defines a single 'node' in this tree. It contains
         two lists, 'l_mustInclude' and 'l_mustNotInclude' that define
         the features described in the 'd_nodes' dictionary. This
         dictionary can in turn contain other C_snodes.
         """
-        
+
         #
         # Methods
         #
         def __init__(self,      astr_nodeName           = "",
-                                al_mustInclude          = [], 
+                                al_mustInclude          = [],
                                 al_mustNotInclude       = []
                                 ):
             #       - Core variables
@@ -136,20 +136,20 @@ class C_snode:
             self.str_name       = 'void'         # name of object variable
             self._id            = -1;            # id of agent
             self._iter          = 0;             # current iteration in an
-                                                 #       arbitrary processing 
+                                                 #       arbitrary processing
                                                  #       scheme
-            self._verbosity     = 0;             # debug related value for 
+            self._verbosity     = 0;             # debug related value for
                                                  #       object
-            self._warnings      = 0;             # show warnings 
-            
+            self._warnings      = 0;             # show warnings
+
             self.sCore          = C_stringCore()
 
-            # The d_nodes is the basic building block of the C_snode container 
+            # The d_nodes is the basic building block of the C_snode container
             #+ class. It is simply a dictionary that contains 'nodes' that
             #+ satisfy a given feature set described by 'mustInclude' and
-            #+ 'mustNotInclude'. 
-            #+ 
-            #+ In general: 
+            #+ 'mustNotInclude'.
+            #+
+            #+ In general:
             #+  'snode_parent'      :       the parent node of this node -- useful
             #+                              for tree structuring.
             #+  '_hitCount'         :       count of hits for all items branching
@@ -162,13 +162,13 @@ class C_snode:
             #+  'd_nodes'           :       dictionary of child nodes branching
             #+                              from this node
             #+  'd_data'            :       a dictionary of data for *this* node
-            #+                              
-            #+ The pattern of 'mustInclude' and 'mustNotInclude' uniquely 
-            #+ characterizes a particular level. "Deeper" features (i.e. features 
+            #+
+            #+ The pattern of 'mustInclude' and 'mustNotInclude' uniquely
+            #+ characterizes a particular level. "Deeper" features (i.e. features
             #+ further along the dictionary tree) must satisfy the combined set
             #+ described by all the 'mustInclude' and 'mustNotInclude' traits of
             #+ each higher level.
-            
+
             self.meta                   = C_meta()
             self.snode_parent           = None
             self.d_nodes                = {}
@@ -181,6 +181,14 @@ class C_snode:
 
         #
         # Getters and setters
+
+        def metaData_print(self, *args):
+            if len(args):
+                self.b_printMetaData    = args[0]
+                return True
+            else:
+                return self.b_printMetaData
+
         def depth(self, *args):
             '''
             Get/set the depth of this node.
@@ -198,7 +206,7 @@ class C_snode:
                 self.b_printPre = args[0]
             else:
                 return self.b_printPre
-        
+
         def __str__(self):
             self.sCore.reset()
             str_pre     = ""
@@ -207,7 +215,7 @@ class C_snode:
             else:
                 str_pre = "+"
             self.sCore.write('%s---%s\n' % (str_pre, self.str_nodeName))
-            if self.b_printPre: 
+            if self.b_printPre:
                 str_pre = "|"
             else:
                 str_pre = " "
@@ -226,7 +234,7 @@ class C_snode:
                     self.d_nodes[node].printPre(True)
                     if node == lastKey:
                         self.d_nodes[node].printPre(False)
-                    str_contents = misc.str_blockIndent('%s' % 
+                    str_contents = misc.str_blockIndent('%s' %
                         self.d_nodes[node], 1, 8, tabBoundary = "")
                     # str_contents = re.sub(r'                ', 'xxxxxxxx|xxxxxxx', str_contents)
                     if self.d_nodes[node].printPre():
@@ -234,7 +242,7 @@ class C_snode:
                     self.sCore.write(str_contents)
                     elCount   = elCount + 1
             return self.sCore.strget()
-  
+
         #
         # Simple error handling
         def error_exit(self, astr_action, astr_error, astr_code):
@@ -243,7 +251,7 @@ class C_snode:
             print("%s"                                      % astr_error)
             print("\nReturning to system with code %s\n"    % astr_code)
             sys.exit(astr_code)
-                                      
+
         def node_branch(self, al_keys, al_values):
             """
             For each node in <al_values>, add to internal contents
@@ -253,39 +261,39 @@ class C_snode:
                 self.error_exit("adding branch nodes", "#keys != #values", 1)
             ldict = dict(zip(al_keys, al_values))
             self.node_dictBranch(ldict)
-              
+
         def node_dictBranch(self, adict):
             """
             Expands the internal md_nodes with <adict>
             """
             self.d_nodes.update(adict)
-                              
+
 class C_snodeBranch:
         """
         The C_snodeBranch class is basically a dictionary collection
         of C_snodes. Conceptually, a C_snodeBranch is a single "layer"
         of C_snodes all branching from a common ancestor node.
-        """            
-        # 
+        """
+        #
         # Member variables
         #
 
-        
+
         #
         # Methods
         #
-        
+
         def __str__(self):
             self.sCore.reset()
             for node in self.dict_branch.keys():
               self.sCore.write('%s' % self.dict_branch[node])
             return self.sCore.strget()
-                    
+
         def __init__(self, al_branchNodes):
             '''
             Constructor.
 
-            If instantiated with a list of nodes, will create/populate 
+            If instantiated with a list of nodes, will create/populate
             internal dictionary with appropriate C_snodes.
             '''
 
@@ -293,12 +301,12 @@ class C_snodeBranch:
             self.str_name               = 'void';           # name of object variable
             self._id                    = -1;               # id of agent
             self._iter                  = 0;                # current iteration in an
-                                                            #       arbitrary processing 
+                                                            #       arbitrary processing
                                                             #       scheme
-            self._verbosity             = 0;                # debug related value for 
+            self._verbosity             = 0;                # debug related value for
                                                             #       object
-            self._warnings              = 0;                # show warnings 
-                    
+            self._warnings              = 0;                # show warnings
+
             self.dict_branch            = {}
             self.sCore                  = C_stringCore()
             element                     = al_branchNodes[0]
@@ -316,7 +324,7 @@ class C_snodeBranch:
             print("%s"                                      % astr_error)
             print("\nReturning to system with code %s\n"    % astr_code)
             sys.exit(astr_code)
-            
+
         def node_branch(self, astr_node, abranch):
             """
             Adds a branch to a node, i.e. depth addition. The given
@@ -327,26 +335,34 @@ class C_snodeBranch:
 class C_stree:
         """
         The C_stree class provides methods for creating / navigating
-        a tree composed of C_snodes. 
-        
-        A C_stree is an ordered (and nested) collection of C_snodeBranch 
+        a tree composed of C_snodes.
+
+        A C_stree is an ordered (and nested) collection of C_snodeBranch
         instances, with additional logic to match nodes with their parent
         node.
-        
+
         The metaphor designed into the tree structure is that of a UNIX
         directory tree, with equivalent functions for 'cdnode', 'mknode'
         'lsnode'.
-        """            
+        """
 
         #
         # Methods
         #
+
+        def metaData_print(self, *args):
+            if len(args):
+                self.b_printMetaData    = args[0]
+                return True
+            else:
+                return self.b_printMetaData
+
         def __init__(self, al_rootBranch=[]):
             """
-            Creates a tree structure and populates the "root" 
+            Creates a tree structure and populates the "root"
             branch.
             """
-            # 
+            #
             # Member variables
             #
             #       - Core variables
@@ -354,16 +370,17 @@ class C_stree:
             self.str_name               = 'void';       # name of object variable
             self._id                    = -1;           # id of agent
             self._iter                  = 0;            # current iteration in an
-                                                        #       arbitrary processing 
+                                                        #       arbitrary processing
                                                         #       scheme
-            self._verbosity             = 0;            # debug related value for 
+            self._verbosity             = 0;            # debug related value for
                                                         #       object
-            self._warnings              = 0;            # show warnings 
-            
+            self._warnings              = 0;            # show warnings
+            self.b_printMetaData        = False
+
             self.l_allPaths             = []            # Each time a new C_snode is
                                                         #+ added to the tree, its path
                                                         #+ list is appended to this
-                                                        #+ list variable.            
+                                                        #+ list variable.
             if not len(al_rootBranch):
                 al_rootBranch           = ['/']
             if len(al_rootBranch):
@@ -373,6 +390,7 @@ class C_stree:
             str_treeRoot                = '/'
             self.l_cwd                  = [str_treeRoot]
             self.sbranch_root           = C_snodeBranch([str_treeRoot])
+            self.snode_current          = None
             self.snode_root             = self.sbranch_root.dict_branch[str_treeRoot]
             self.snode_root.depth(0)
             self.snode_root.snode_parent = self.snode_root
@@ -380,12 +398,12 @@ class C_stree:
             self.l_allPaths             = self.l_cwd[:]
             if len(al_rootBranch) and al_rootBranch != ['/']:
                 self.mknode(al_rootBranch)
-         
+
         def __str__(self):
             self.sCore.reset()
             self.sCore.write('%s' % self.snode_root)
             return self.sCore.strget()
-        
+
         def root(self):
             """
             Reset all nodes and branches to 'root'.
@@ -394,8 +412,8 @@ class C_stree:
             self.l_cwd                  = [str_treeRoot]
             self.snode_current          = self.snode_root
             self.sbranch_current        = self.sbranch_root
-        
-           
+
+
         def cwd(self):
             '''
             Return a UNIX FS type string of the current working 'directory'.
@@ -404,19 +422,19 @@ class C_stree:
             str_cwd                     = '/'.join(l_cwd)
             if len(str_cwd)>1: str_cwd  = str_cwd[1:]
             return str_cwd
-          
+
         def pwd(self):
             '''
             Prints the cwd
             '''
             return self.cwd()
-        
+
         def ptree(self):
             '''
             Return all the paths in the tree.
             '''
             return self.l_allPaths
-            
+
         def node_mustNotInclude(self, al_mustNotInclude, ab_reset=False):
             """
             Either appends or resets the <mustNotInclude> list of snode_current
@@ -428,7 +446,7 @@ class C_stree:
                 l_current   = self.snode_current.l_mustNotInclude[:]
                 l_total     = l_current + al_mustNotInclude
                 self.snode_current.l_mustNotInclude = l_total[:]
-        
+
         def node_mustInclude(self, al_mustInclude, ab_reset=False):
             """
             Either appends or resets the <mustInclude> list of snode_current
@@ -440,7 +458,7 @@ class C_stree:
                 l_current   = self.snode_current.l_mustInclude[:]
                 l_total     = l_current + al_mustInclude
                 self.snode_current.l_mustInclude = l_total[:]
-        
+
         def paths_update(self, al_branchNodes):
             """
             Add each node in <al_branchNodes> to the self.ml_cwd and
@@ -455,11 +473,11 @@ class C_stree:
                 #print "l_pwd: %s" % l_pwd
                 #print "ml_cwd: %s" % self.ml_cwd
                 self.l_allPaths.append(l_pwd)
-                    
+
         def mknode(self, al_branchNodes):
             """
             Create a set of nodes (branches) at current node. Analogous to
-            a UNIX mkdir call, however nodes can be any type (i.e. not 
+            a UNIX mkdir call, however nodes can be any type (i.e. not
             just "directories" but also "files")
             """
             b_ret = True
@@ -483,7 +501,13 @@ class C_stree:
             # Update the ml_allPaths
             self.paths_update(al_branchNodes)
             return b_ret
-        
+
+        def cat(self, name):
+            '''
+            Returns the contents of the 'name'd element at this level.
+            '''
+            return self.snode_current.d_data[name]
+
         def touch(self, name, data):
             '''
             Append 'data' to the current node d_data dictionary under key 'name'
@@ -505,17 +529,17 @@ class C_stree:
             try:          self.l_allPaths.index(al_path)
             except:       b_OK    = False
             return b_OK
-        
+
         def b_pathInTree(self, astr_path):
             """
             Converts a string <astr_path> specifier to a list-based
             *absolute* lookup, i.e. "/node1/node2/node3" is converted
             to ['/' 'node1' 'node2' 'node3'].
-          
+
             The method also understands a paths that start with: '..' or
             combination of '../../..' and is also aware that the root
             node is its own parent.
-          
+
             If the path list conversion is valid (i.e. exists in the
             space of existing paths, l_allPaths), return True and the
             destination path list; else return False and the current
@@ -538,14 +562,14 @@ class C_stree:
                     else: al_path[0] = ''
                     #print "l_path  = %s" % l_path
                     #print "al_path = %s (%d)" % (al_path, len(al_path[0]))
-                if(len(al_path[0])):  
-                    #print "extending %s with %s" % (l_path, al_path)  
+                if(len(al_path[0])):
+                    #print "extending %s with %s" % (l_path, al_path)
                     l_path.extend(al_path)
             else:
                 l_path      = self.l_cwd
                 l_path.extend(al_path)
             #print "final path list = %s (%d)" % (l_path, len(l_path))
-            if(len(l_path)>=1 and l_path[0] != '/'):      l_path.insert(0, '/')  
+            if(len(l_path)>=1 and l_path[0] != '/'):      l_path.insert(0, '/')
             if(len(l_path)>1):            l_path[0]       = ''
             if(not len(l_path)):          l_path          = ['/']
             #TODO: Possibly check for trailing '/', i.e. list ['']
@@ -553,16 +577,16 @@ class C_stree:
             #print "final path str  = %s" % str_path
             b_valid, al_path = self.b_pathInTree(str_path)
             return b_valid, al_path
-          
+
         def cdnode(self, astr_path):
             """
-            Change working node to astr_path. 
+            Change working node to astr_path.
             The path is converted to a list, split on '/'
-          
+
             Returns the cdnode path
-          
+
             """
-          
+
             # Start at the root and then navigate to the
             # relevant node
             l_absPath             = []
@@ -577,10 +601,25 @@ class C_stree:
                     self.snode_current = self.snode_current.d_nodes[node]
                 self.sbranch_current.dict_branch = self.snode_current.snode_parent.d_nodes
             return self.l_cwd
-                    
-        def ls(self, astr_path=""):
-            return self.str_lsnode(astr_path)
-        
+
+        def ls(self, astr_path="", **kwargs):
+            b_lsData    = True
+            b_lsNodes   = True
+            if len(astr_path): self.cdnode(astr_path)
+            str_nodes   = self.str_lsnode(astr_path)
+            d_data      = self.snode_current.d_data
+            for key, val in kwargs.iteritems():
+                if key == 'data':   b_lsData    = val
+                if key == 'nodes':  b_lsNodes   = val
+            if b_lsData and b_lsNodes:
+                return str_nodes, d_data
+            if b_lsData:
+                return d_data
+            if b_lsNodes:
+                return str_nodes
+            return str_nodes, d_data
+
+
         def str_lsnode(self, astr_path=""):
             """
             Print/return the set of nodes branching from current node as string
@@ -594,10 +633,11 @@ class C_stree:
             print(str_ls)
             if len(astr_path): self.cdnode(str_cwd)
             return str_ls
-          
-        def lst_lsnode(self, astr_path=""):
+
+        def lstr_lsnode(self, astr_path=""):
             """
-            Return the set of nodes branching from current node as list
+            Return the string names of the set of nodes branching from
+            current node as list of strings
             """
             self.sCore.reset()
             str_cwd       = self.cwd()
@@ -605,7 +645,7 @@ class C_stree:
             lst = self.snode_current.d_nodes.keys()
             if len(astr_path): self.cdnode(str_cwd)
             return lst
-        
+
         def lsbranch(self, astr_path=""):
             """
             Print/return the set of nodes in current branch
@@ -618,7 +658,7 @@ class C_stree:
             print(str_ls)
             if len(astr_path): self.cdnode(str_cwd)
             return str_ls
-          
+
         def lstree(self, astr_path=""):
             """
             Print/return the tree from the current node.
@@ -630,7 +670,7 @@ class C_stree:
             print(str_ls)
             if len(astr_path): self.cdnode(str_cwd)
             return str_ls
-          
+
         def lsmeta(self, astr_path=""):
             """
             Print/return the "meta" information of the node, i.e.
@@ -648,8 +688,20 @@ class C_stree:
             if len(astr_path): self.cdnode(str_cwd)
             self.snode_current.b_printContents  = b_contentsFlag
             return str_ls
-          
-        def treeRecurse(self, astr_startPath = '/', afunc_nodeEval = None):
+
+        def tree_metaData_print(self, aval):
+            self.metaData_print(aval)
+            self.treeRecurse(self.treeNode_metaSet)
+
+        def treeNode_metaSet(self, astr_path, **kwargs):
+            '''
+            Sets the metaData_print bit on node at <astr_path>.
+            '''
+            self.cdnode(astr_path)
+            self.snode_current.metaData_print(self.b_printMetaData)
+            return True
+
+        def treeRecurse(self, afunc_nodeEval = None, astr_startPath = '/'):
             """
             Recursively walk through a C_stree, starting from node
             <astr_startPath>.
@@ -657,7 +709,7 @@ class C_stree:
             The <afunc_nodeEval> is a function that is called on a node
             path. It is of form:
 
-                afunc_nodeEval(astr_startPath)
+                afunc_nodeEval(astr_startPath, **kwargs)
 
             and must return either True or False.
             """
@@ -666,11 +718,11 @@ class C_stree:
                 b_valid     = afunc_nodeEval(astr_startPath)
             #print 'processing node: %s' % astr_startPath
             if b_valid:
-                for node in self.lst_lsnode(astr_startPath):
+                for node in self.lstr_lsnode(astr_startPath):
                     if astr_startPath == '/': recursePath = "/%s" % node
                     else: recursePath = '%s/%s' % (astr_startPath, node)
-                    self.treeRecurse(recursePath, afunc_nodeEval)
-  
+                    self.treeRecurse(afunc_nodeEval, recursePath)
+
         #
         # Simple error handling
         def error_exit(self, astr_action, astr_error, astr_code):
@@ -679,4 +731,3 @@ class C_stree:
             print("%s" % astr_error)
             print("\nReturning to system with code %s\n" % astr_code)
             sys.exit(astr_code)
-

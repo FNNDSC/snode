@@ -88,6 +88,10 @@ if b_treeBuild:
   STree.touch('desc', ['one', 'two', 'three'])
   STree.mknode(['chick1', 'chick2'])
   print(STree)
-  S = STree
+  # S = STree
+  STree.cdnode('/meat/chicken/brown/rooster')
+  l_val = STree.cat('desc')
+  print(l_val)
+  STree.ls()
 
-  
+  print('Normal Termination...')

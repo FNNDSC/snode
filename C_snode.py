@@ -30,7 +30,6 @@ import  sys
 import  re
 from    string                  import  *
 
-from    _common                 import  systemMisc as misc
 from    C_stringCore            import  *
 
 import  itertools
@@ -207,6 +206,37 @@ class C_snode:
             else:
                 return self.b_printPre
 
+        @staticmethod
+        def str_blockIndent(astr_buf, a_tabs=1, a_tabLength=4, **kwargs):
+            """
+            For the input string <astr_buf>, replace each '\n'
+            with '\n<tab>' where the number of tabs is indicated
+            by <a_tabs> and the length of the tab by <a_tabLength>
+
+            Trailing '\n' are *not* replaced.
+            """
+            str_tabBoundary = " "
+            for key, value in kwargs.iteritems():
+              if key == 'tabBoundary':  str_tabBoundary = value
+            b_trailN = False
+            length = len(astr_buf)
+            ch_trailN = astr_buf[length - 1]
+            if ch_trailN == '\n':
+              b_trailN = True
+              astr_buf = astr_buf[0:length - 1]
+            str_ret = astr_buf
+            str_tab = ''
+            str_Indent = ''
+            for i in range(a_tabLength):
+                str_tab = '%s ' % str_tab
+            str_tab = "%s%s" % (str_tab, str_tabBoundary)
+            for i in range(a_tabs):
+                str_Indent = '%s%s' % (str_Indent, str_tab)
+            str_ret = re.sub('\n', '\n%s' % str_Indent, astr_buf)
+            str_ret = '%s%s' % (str_Indent, str_ret)
+            if b_trailN: str_ret = str_ret + '\n'
+            return str_ret
+
         def __str__(self):
             self.sCore.reset()
             str_pre     = ""
@@ -234,7 +264,7 @@ class C_snode:
                     self.d_nodes[node].printPre(True)
                     if node == lastKey:
                         self.d_nodes[node].printPre(False)
-                    str_contents = misc.str_blockIndent('%s' %
+                    str_contents = C_snode.str_blockIndent('%s' %
                         self.d_nodes[node], 1, 8, tabBoundary = "")
                     # str_contents = re.sub(r'                ', 'xxxxxxxx|xxxxxxx', str_contents)
                     if self.d_nodes[node].printPre():
